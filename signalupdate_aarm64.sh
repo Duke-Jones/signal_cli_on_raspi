@@ -1,6 +1,9 @@
 
 #!/bin/bash
 
+###########################################################################
+# helper function: asking for yes/no input
+###########################################################################
 function yes_or_no {
     while true; do
         read -p "$* [y/n]: " yn
@@ -17,20 +20,34 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 newLineOne='export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-armhf"'
 newLineTwo='PATH=${JAVA_HOME}:$PATH'
 
+systemarch=$(uname -m)
+if [ "$systemarch" != "armv7" ] && [ "$systemarch" != "aarch64" ];
+then
+   echo "untestet architecture ($systemarch) - I'll better stop here !" 1>&2
+   exit
+fi
+
+
 # required signal library type
 arch=armv7-unknown-linux-gnueabihf
 #arch=aarch64-unknown-linux-gnu
 
+# installation destination
 dest=/usr/local/signal
 do_install=false
 
-# Make sure only root can run our script
+###########################################################################
+# root check
+###########################################################################
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root!" 1>&2
   echo
   exit 1
 fi
 
+###########################################################################
+# checking latest version of signal-cli and decide if installation is required
+###########################################################################
 # get Filename of the last version of signal-cli
 signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*-Linux.tar.gz$\")) | .browser_download_url")
 signalfilename=${signalfile##*/}
@@ -67,8 +84,10 @@ else
    fi
 fi
 
-# starting the installation
 if [ "$do_install" == true ]; then
+   ###########################################################################
+   # starting installation routine
+   ###########################################################################
 
    # goto the destination directory
    cd $dest
@@ -79,6 +98,9 @@ if [ "$do_install" == true ]; then
       rm /usr/local/bin/signal-cli
    fi
 
+   ###########################################################################
+   # backup
+   ###########################################################################
    # make a backup of the existing installation (or directory)
    existing=$(find /usr/local/signal/ -mindepth 1 -maxdepth 1 -name signal-cli-* | head -n 1)
 
@@ -94,15 +116,18 @@ if [ "$do_install" == true ]; then
    find /usr/local/signal/ -mindepth 1 -maxdepth 1 -type f -delete
    find /usr/local/signal/ -mindepth 1 -maxdepth 1 -type d -not -iname "backup*" -exec rm -r "{}" \;
 
+   ###########################################################################
+   # getting signal-cli 
+   ###########################################################################
    echo " -> downloading new client"
    wget -q -P $dest $signalfile
    cat "$dest/$signalfilename" | tar -xzf - -i
 
 
    ###########################################################################
-   # libsignal_jni.so
+   # getting libsignal_jni.so for raspberry
+   # (general needed, because signal-cli doesn't support Rasperry directly)
    ###########################################################################
-
    # getting version of included "libsignal-client*.jar"
    localib=$(ls ./signal-cli-$versionsig/lib/libsignal-client*.jar)
    # getting version
@@ -119,29 +144,33 @@ if [ "$do_install" == true ]; then
    echo " -> patching 'libsignal-client-$versionsig.jar' with customised libsignal library"
    zip -ujq $dest/signal-cli-$versionsig/lib/libsignal-client-$versionlib.jar $dest/libsignal_jni.so
 
-   ###########################################################################
-   # libsqlitejdbc.so
-   ###########################################################################
-   # getting version of included "libsqlitejdbc.so"
-   sqllib=$(ls ./signal-cli-$versionsig/lib/sqlite-jdbc*.jar)
-   versionsql=${sqllib##*/}
-   versionsql=${versionsql:12:-4}
-   versionsql_s=${versionsql:0:-2}
-   echo " -> required version of the sqlite-jdbc library : v"$versionsql
+   if [ "$systemarch" = "aarch64" ];
+   then
+      ###########################################################################
+      # getting libsqlitejdbc.so
+      # ( only needed on aarch64 )
+      ###########################################################################
+      # getting version of included "libsqlitejdbc.so"
+      sqllib=$(ls ./signal-cli-$versionsig/lib/sqlite-jdbc*.jar)
+      versionsql=${sqllib##*/}
+      versionsql=${versionsql:12:-4}
+      versionsql_s=${versionsql:0:-2}
+      echo " -> required version of the sqlite-jdbc library : v"$versionsql
 
-   echo " -> getting sources"
-   wget -q -P $dest "https://github.com/xerial/sqlite-jdbc/archive/refs/tags/$versionsql.tar.gz"
-   cat "$dest/$versionsql.tar.gz" | tar -xzf - -i
+      echo " -> getting sources"
+      wget -q -P $dest "https://github.com/xerial/sqlite-jdbc/archive/refs/tags/$versionsql.tar.gz"
+      cat "$dest/$versionsql.tar.gz" | tar -xzf - -i
 
-   echo " -> compiling sources (needs about 2 minutes on a Raspi4)"
-   make -C $dest/sqlite-jdbc-$versionsql clean  > /dev/null 2> /dev/null
-   make -C $dest/sqlite-jdbc-$versionsql native > /dev/null 2> /dev/null
+      echo " -> compiling sources (needs about 2 minutes on a Raspi4)"
+      make -C $dest/sqlite-jdbc-$versionsql clean  > /dev/null 2> /dev/null
+      make -C $dest/sqlite-jdbc-$versionsql native > /dev/null 2> /dev/null
 
-   echo " -> patching 'sqlite-jdbc-$versionsql.jar' with compiled sqlite-jdbc library"
-   zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
-   archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
-   librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
-   $SCRIPT_DIR/zipadd $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar $librarypath $archivepath
+      echo " -> patching 'sqlite-jdbc-$versionsql.jar' with compiled sqlite-jdbc library"
+      zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
+      archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
+      librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
+      $SCRIPT_DIR/zipadd $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar $librarypath $archivepath
+   fi
 
    ###########################################################################
    # be sure to use the required java version
