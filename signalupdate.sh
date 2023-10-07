@@ -79,7 +79,7 @@ fi
 ###########################################################################
 install_java=false
 java_major=$(java --version | head -n 1 | cut -f2 --delimiter=' ' | cut -f1 --delimiter='.')
-java_alt=$(sudo update-alternatives --display java | grep java-17 | grep priority | head -n 1 | cut -f1 --delimiter=' ')
+java_alt=$(update-alternatives --display java | grep java-17 | grep -i priorit | head -n 1 | cut -f1 --delimiter=' ')
 if [ "$java_alt" != "" ]; then
    java_alt_major=$($java_alt --version | head -n 1 | cut -f2 --delimiter=' ' | cut -f1 --delimiter='.')
 fi
