@@ -26,23 +26,23 @@ sudo bash signalupdate.sh
 * helperfile "zipadd"
 
 ## Example run
-  ```bash
-user@system:~/signal_cli_on_raspi $ sudo bash signalupdate.sh 
- -> new client version     : v0.12.2
- -> current client version : v0.12.2
- -> the versions are the same - install anyway ? [y/n]: y
- -> backup old signal directory into '/usr/local/signal/backup_20231007_214922'
- -> downloading new client
- -> required version of the libsignal library (armv7-unknown-linux-gnueabihf) : v0.32.1
- -> patching 'libsignal-client-0.12.2.jar' with customised libsignal library
- -> required version of the sqlite-jdbc library : v3.43.0.0
- -> getting sources
- -> compiling sources (needs about 2 minutes on a Raspi4)
- -> patching 'sqlite-jdbc-3.43.0.0.jar' with compiled sqlite-jdbc library
- -> patching 'signal-cli' with information about the required java version 
- -> creating symbolic link
- -> clean up
-
- -> process successfully completed, new version : 'signal-cli 0.12.2'
-```
+    user@system:~/signal_cli_on_raspi $ sudo bash signalupdate.sh 
+    
+     -> new client version     : v0.12.2
+     -> current client version : v0.12.2
+     -> the versions are the same - install anyway ? [y/n]: y
+     -> backup old signal directory into '/usr/local/signal/backup_20231007_214922'
+     -> downloading new client
+     -> required version of the libsignal library (armv7-unknown-linux-gnueabihf) : v0.32.1
+     -> patching 'libsignal-client-0.12.2.jar' with customised libsignal library
+     -> required version of the sqlite-jdbc library : v3.43.0.0
+     -> getting sources
+     -> compiling sources (needs about 2 minutes on a Raspi4)
+     -> patching 'sqlite-jdbc-3.43.0.0.jar' with compiled sqlite-jdbc library
+     -> patching 'signal-cli' with information about the required java version 
+     -> creating symbolic link
+     -> clean up
+    
+     -> process successfully completed, new version : 'signal-cli 0.12.2'
+    
 
