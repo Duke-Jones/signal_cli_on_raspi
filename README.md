@@ -1,5 +1,5 @@
 # signalupdate.sh
-This script automatically installs or updates the Signal command line client on a Raspberry with Raspberry Pi OS (Raspian).
+This script automatically installs or updates the signal command line client ([https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli")) on a Raspberry with Raspberry Pi OS (Raspian).
 
 ## Procedure details
 1. check for an existing version, backup if necessary
