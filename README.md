@@ -23,4 +23,5 @@ sudo bash signalupdate.sh
 * RaspberryPi with "armv7(l)" or "aarch64" (only tested on Raspi4B).
 * installed package "wget
 * installed package "java-17-openjdk" (as primary or alternative java version, if the primary version of java has to be a different one --> see 'update-alternatives')
+* helperfile "zipadd"
 
