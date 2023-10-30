@@ -44,13 +44,27 @@ fi
 # checking latest version of signal-cli and decide if installation is required
 ###########################################################################
 # get Filename of the last version of signal-cli
-signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*-Linux.tar.gz$\")) | .browser_download_url")
+
+suffix="-Linux"
+signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
+if [ "$signalfile" == "" ]; then
+   suffix=""
+   signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
+fi
+
+if [ "$signalfile" == "" ]; then
+   echo " -> no matching archive found on 'https://api.github.com/repos/AsamK/'"
+   echo " -> exiting - bye bye"
+   exit
+fi
+
+suffixlength=${#suffix}
 signalfilename=${signalfile##*/}
-#echo $signalfile
 
 # extract version string
 versionsig=${signalfile##*/}
-versionsig=${versionsig:11:-13}
+cut=
+versionsig=${versionsig:11:-$((7+$suffixlength))}
 #echo $versionsig
 echo " -> new client version     : v$versionsig"
 
