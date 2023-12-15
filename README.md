@@ -5,7 +5,7 @@ This script automatically installs or updates the latest signal command line cli
 1. check for an existing version, backup if necessary
 2. download the latest signal-cli ([https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli"))
 3. download corresponding library and patch signal-cli installation with it ([https://github.com/exquo/libsignal-client](https://github.com/exquo/libsignal-client "https://github.com/exquo/libsignal-client"))
-4. (aarch64 only) download corresponding sources for libsqlitejdbc.so, compile and patch signal-cli installation with it ([https://github.com/xerial/sqlite-jdbc](https://github.com/xerial/sqlite-jdbc "https://github.com/xerial/sqlite-jdbc"))
+4. on aarch64 systems only: download corresponding sources for libsqlitejdbc.so, compile and patch signal-cli installation with it ([https://github.com/xerial/sqlite-jdbc](https://github.com/xerial/sqlite-jdbc "https://github.com/xerial/sqlite-jdbc"))
 
 ## File locations
 - downloaded files and binaries:
