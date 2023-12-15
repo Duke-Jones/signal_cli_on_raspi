@@ -1,7 +1,7 @@
 # signalupdate.sh
 This script automatically installs or updates the latest signal command line client (--> signal-cli, see [https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli")) on a Raspberry with Raspberry Pi OS (Raspian). If a new version of signal-cli has been released, simply run the script again.
 
-## Procedure details
+## Procedure details (what the script does)
 1. check for an existing version, backup if necessary
 2. download the latest signal-cli ([https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli"))
 3. download corresponding library and patch signal-cli installation with it ([https://github.com/exquo/libsignal-client](https://github.com/exquo/libsignal-client "https://github.com/exquo/libsignal-client"))
@@ -21,7 +21,7 @@ sudo bash signalupdate.sh
 
 ## Requirements
 * RaspberryPi with "armv7(l)" or "aarch64" (only tested on Raspi4B).
-* installed package "wget
+* installed package "wget"
 * installed package "java-17-openjdk" (as primary or alternative java version, if the primary version of java has to be a different one --> see 'update-alternatives')
 * helperfile "zipadd"
 
