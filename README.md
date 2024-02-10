@@ -1,14 +1,14 @@
 # signalupdate.sh
 This script automatically installs or updates the latest signal command line client (--> signal-cli, see [https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli")) on a Raspberry with Raspberry Pi OS (Raspian). If a new version of signal-cli has been released, simply run the script again.
 
-## Procedure details (what the script does)
+## What does the script do
 1. check for an existing version, backup if necessary
 2. download the latest signal-cli ([https://github.com/AsamK/signal-cli](https://github.com/AsamK/signal-cli "https://github.com/AsamK/signal-cli"))
 3. download corresponding library and patch signal-cli installation with it ([https://github.com/exquo/libsignal-client](https://github.com/exquo/libsignal-client "https://github.com/exquo/libsignal-client"))
 4. on aarch64 systems only: download corresponding sources for libsqlitejdbc.so, compile and patch signal-cli installation with it ([https://github.com/xerial/sqlite-jdbc](https://github.com/xerial/sqlite-jdbc "https://github.com/xerial/sqlite-jdbc"))
 
-## File locations
-- downloaded files and binaries:
+## which files are located where if the script was successful:
+- downloaded files, binaries and backups :
 `/usr/local/signal/`
 - symbolic link : 
 `/usr/local/bin/signal-cli`
@@ -23,7 +23,7 @@ sudo bash signalupdate.sh
 * RaspberryPi with "armv7(l)" or "aarch64" (only tested on Raspi4B).
 * installed package "wget"
 * installed package "java-17-openjdk" (as primary or alternative java version, if the primary version of java has to be a different one --> see 'update-alternatives')
-* helperfile "zipadd"
+* installed python
 
 ## Example run
     user@system:~/signal_cli_on_raspi $ sudo bash signalupdate.sh 
