@@ -14,6 +14,20 @@ function yes_or_no {
     done
 }
 
+
+###########################################################################
+# helper function: change existing zip archive
+###########################################################################
+zipadd() {
+python -c '
+import zipfile as zf, sys
+z=zf.ZipFile(sys.argv[1], "a")
+z.write(sys.argv[2], sys.argv[3])
+z.close()' $1 $2 $3
+}
+
+
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 systemarch=$(uname -m)
@@ -200,7 +214,7 @@ fi
       zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
       archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
       librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
-      $SCRIPT_DIR/zipadd $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar $librarypath $archivepath
+      zipadd "$dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar" "$librarypath" "$archivepath"
    fi
 
    ###########################################################################
