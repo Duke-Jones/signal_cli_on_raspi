@@ -1,5 +1,6 @@
-
 #!/bin/bash
+
+login="-u duke.jones@gmx.de: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"
 
 ###########################################################################
 # helper function: asking for yes/no input
@@ -26,6 +27,32 @@ z.write(sys.argv[2], sys.argv[3])
 z.close()' $1 $2 $3
 }
 
+###########################################################################
+# helper function: install required alternative java version
+###########################################################################
+installjava() {
+   java_root=/usr/lib/jvm
+   java_dest=java-21.0.2-openjdk-arm64
+   java_lns=java-21-openjdk-arm64
+
+   mkdir -p /tmp/openjdk21_install
+   mkdir -p "$java_root/$java_dest/"
+
+
+   wget -O /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-aarch64_bin.tar.gz
+
+   echo "$java_root/$java_dest/"
+   tar xvzf /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz --strip-components=1 -C "$java_root/$java_dest/"
+
+   cd "$java_root"
+   ln -r -s "$java_dest" "$java_lns"
+
+   update-alternatives --install /usr/bin/java  java  "$java_root/$java_lns/bin/java"  500
+   update-alternatives --install /usr/bin/javac javac "$java_root/$java_lns/bin/javac" 500
+
+   rm -r /tmp/openjdk21_install
+}
+
 
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -40,6 +67,8 @@ fi
 # required signal library type
 arch=armv7-unknown-linux-gnueabihf
 #arch=aarch64-unknown-linux-gnu
+# java version
+req_java_v=21
 
 # installation destination
 dest=/usr/local/signal
@@ -60,10 +89,10 @@ fi
 # get Filename of the last version of signal-cli
 
 suffix="-Linux"
-signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
+signalfile=$(curl $login -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
 if [ "$signalfile" == "" ]; then
    suffix=""
-   signalfile=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
+   signalfile=$(curl $login -s https://api.github.com/repos/AsamK/signal-cli/releases/latest | jq -r ".assets[] | select(.name | test(\"signal-cli-.*$suffix.tar.gz$\")) | .browser_download_url" | grep -E "signal-cli-([0-9]{1,2}\.?){3}$suffix\.tar\.gz$")
 fi
 
 if [ "$signalfile" == "" ]; then
@@ -82,23 +111,37 @@ versionsig=${versionsig:11:-$((7+$suffixlength))}
 #echo $versionsig
 echo " -> new client version     : v$versionsig"
 
+same_version=0
+
 # now get the current installed version
 currentversionfile=$(find /usr/local/bin/ -maxdepth 1 -name signal-cli)
 if [ -z "$currentversionfile" ]; then
-   echo " -> no current installation found -> installing signal-cli now"
+   answer="$(yes_or_no ' -> no current installation found -> installing signal-cli now ?')"
+   if [ $answer -eq 0 ]; then
+      echo " -> exiting - bye bye"
+      exit
+   fi
 else
    currentversionfile=$(echo "$currentversionfile" | xargs readlink -f)
-   currentversion=$(echo "$currentversionfile" | cut -f5 --delimiter='/')
-   currentversion=${currentversion:11}
+   currentversionfull=$(echo "$currentversionfile" | cut -f5 --delimiter='/')
+   current_path=$(echo "$currentversionfile" | cut -f1-5 --delimiter='/')
+   currentversion=${currentversionfull:11}
+
    echo " -> current client version : v$currentversion"
+
    if [ "$versionsig" == "$currentversion" ]; then
       answer="$(yes_or_no ' -> the versions are the same - install anyway ?')"
       if [ $answer -eq 0 ]; then
          echo " -> exiting - bye bye"
          exit
       fi
+      same_version=1
    else
-      echo " -> installing new signal-cli  now"
+      answer="$(yes_or_no ' -> older version found - installing new signal-cli now ?')"
+      if [ $answer -eq 0 ]; then
+         echo " -> exiting - bye bye"
+         exit
+      fi
    fi
 fi
 
@@ -107,25 +150,38 @@ fi
 ###########################################################################
 install_java=false
 java_major=$(java --version | head -n 1 | cut -f2 --delimiter=' ' | cut -f1 --delimiter='.')
-java_alt=$(update-alternatives --list java | grep java-17 | head -n 1 | cut -f1 --delimiter=' ')
+java_alt=$(update-alternatives --list java | grep java-$req_java_v | head -n 1 | cut -f1 --delimiter=' ')
 if [ "$java_alt" != "" ]; then
    java_alt_major=$($java_alt --version | head -n 1 | cut -f2 --delimiter=' ' | cut -f1 --delimiter='.')
 fi
 
 if [ "$java_major" == "" ]; then
-   echo " -> java: no version found - I will stop here"
-   echo "    you must install 'java-17-openjdk' or higher"
-   echo " -> exiting - bye bye"
-   exit
-elif [ $java_major -lt 17 ]; then
-   if [ "$java_alt_major" != "" ] && [ $java_alt_major -ge 17 ]; then
-      has_java_alt=true
-   else
-      echo " -> java: existing version too old - I will stop here"
-      echo "    you can upgrade to java-17-openjdk or you can install java-17-openjdk as an alternative (see 'update-alternatives')"
-      echo " -> exiting - bye bye"
-      exit
-   fi
+
+    answer="$(yes_or_no ' -> java: no java found - install openjdk-21 ?')"
+    if [ $answer -eq 1 ]; then
+        installjava
+        hasjava=true
+    else
+        echo " -> java: no version found - I will stop here"
+        echo "    you must install \'java-$req_java_v-openjdk\' or higher"
+        echo " -> exiting - bye bye"
+        exit
+    fi
+elif [ $java_major -lt $req_java_v ]; then
+    if [ "$java_alt_major" != "" ] && [ $java_alt_major -ge $req_java_v ]; then
+        has_java_alt=true
+    else
+        answer="$(yes_or_no ' -> java: no java-21 found - install openjdk-21 as alternative version ?')"
+        if [ $answer -eq 1 ]; then
+            installjava
+            has_java_alt=true
+        else
+            echo " -> java: existing version too old - I will stop here"
+            echo "    you can upgrade to java-$req_java_v-openjdk or you can install java-17-openjdk as an alternative (see 'update-alternatives')"
+            echo " -> exiting - bye bye"
+            exit
+        fi
+    fi
 else
    hasjava=true
 fi
@@ -140,27 +196,18 @@ fi
    fi
    cd $dest
 
-   # delete old symbolic link
-   if [ -f "/usr/local/bin/signal-cli" ]; then
-      rm /usr/local/bin/signal-cli
-   fi
 
    ###########################################################################
    # backup
    ###########################################################################
-   # make a backup of the existing installation (or directory)
-   existing=$(find /usr/local/signal/ -mindepth 1 -maxdepth 1 -name signal-cli-* | head -n 1)
+   # make a backup of the existing installation if the version stay the same 
+   if [ "$same_version" -eq 1 ]; then
+      cur_count=$(find $dest/ -maxdepth 1 -type d -iname "${currentversionfull}_*" | wc -l)
+      cur_count=$(($cur_count + 1))
 
-   if [ "$existing" != "" ]; then
-      bckDir="backup_"$(date +"%Y%m%d_%H%M%S")
-      echo " -> backup old signal directory into '$dest/$bckDir'"
-      mkdir $bckDir
-      cp -ra ./signal-cli-* ./$bckDir/
+      mv ${current_path} ${current_path}_${cur_count}
    fi
 
-   # delete all files and folders which are not beginning with BACKUP
-   find /usr/local/signal/ -mindepth 1 -maxdepth 1 -type f -delete
-   find /usr/local/signal/ -mindepth 1 -maxdepth 1 -type d -not -iname "backup*" -exec rm -r "{}" \;
 
    ###########################################################################
    # getting signal-cli 
@@ -211,11 +258,19 @@ fi
       make -C $dest/sqlite-jdbc-$versionsql native > /dev/null 2> /dev/null
 
       echo " -> patching 'sqlite-jdbc-$versionsql.jar' with compiled sqlite-jdbc library"
+
+echo debug 1
       zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
+echo debug 2
       archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
+echo debug 3
       librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
+echo debug 4
       zipadd "$dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar" "$librarypath" "$archivepath"
+echo debug 5
    fi
+
+   exit
 
    ###########################################################################
    # be sure to use the required java version
@@ -232,6 +287,10 @@ fi
    ###########################################################################
    # creating new symbolic link
    ###########################################################################
+   if [ -f "/usr/local/bin/signal-cli" ]; then
+      rm /usr/local/bin/signal-cli
+   fi
+
    echo " -> creating symbolic link"
    ln -s $dest/signal-cli-$versionsig/bin/signal-cli /usr/local/bin/signal-cli
 
