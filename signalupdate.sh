@@ -1,6 +1,9 @@
 #!/bin/bash
 
-login="-u duke.jones@gmx.de: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"
+if [ ! -z "$1" ] && [ ! -z "$2" ]; then
+   login="-u $1:$2"
+fi
+
 
 ###########################################################################
 # helper function: asking for yes/no input
@@ -186,6 +189,10 @@ else
    hasjava=true
 fi
 
+echo 1 $JAVA_HOME
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64
+echo 2 $JAVA_HOME
+
    ###########################################################################
    # starting installation routine
    ###########################################################################
@@ -259,24 +266,21 @@ fi
 
       echo " -> patching 'sqlite-jdbc-$versionsql.jar' with compiled sqlite-jdbc library"
 
-echo debug 1
-      zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
-echo debug 2
+      zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so #> /dev/null
       archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
-echo debug 3
       librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
-echo debug 4
       zipadd "$dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar" "$librarypath" "$archivepath"
-echo debug 5
-   fi
+fi
 
-   exit
 
    ###########################################################################
    # be sure to use the required java version
    ###########################################################################
    if [ "$has_java_alt" = true ]; then
+      echo 1 $java_alt
       java_alt=${java_alt:0:-9}
+      echo 2 $java_alt
+
       newLineOne="export JAVA_HOME=\"$java_alt\""
       newLineTwo="PATH=${JAVA_HOME}:$PATH"
 
