@@ -41,17 +41,19 @@ installjava() {
    mkdir -p /tmp/openjdk21_install
    mkdir -p "$java_root/$java_dest/"
 
+   echo " -> downloading jdk-21"
+   wget -q -O /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-aarch64_bin.tar.gz
 
-   wget -O /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-aarch64_bin.tar.gz
+   #echo "$java_root/$java_dest/"
 
-   echo "$java_root/$java_dest/"
-   tar xvzf /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz --strip-components=1 -C "$java_root/$java_dest/"
+   echo " -> installing jdk-21 to $java_root/$java_dest/"
+   tar xvzf /tmp/openjdk21_install/openjdk-21.0.2_linux-aarch64_bin.tar.gz --strip-components=1 -C "$java_root/$java_dest/" > /dev/null
 
    cd "$java_root"
    ln -r -s "$java_dest" "$java_lns"
 
-   update-alternatives --install /usr/bin/java  java  "$java_root/$java_lns/bin/java"  500
-   update-alternatives --install /usr/bin/javac javac "$java_root/$java_lns/bin/javac" 500
+   update-alternatives --install /usr/bin/java  java  "$java_root/$java_lns/bin/java"  500 > /dev/null
+   update-alternatives --install /usr/bin/javac javac "$java_root/$java_lns/bin/javac" 500 > /dev/null
 
    rm -r /tmp/openjdk21_install
 }
@@ -178,6 +180,7 @@ elif [ $java_major -lt $req_java_v ]; then
         if [ $answer -eq 1 ]; then
             installjava
             has_java_alt=true
+            java_alt=$(update-alternatives --list java | grep java-$req_java_v | head -n 1 | cut -f1 --delimiter=' ')
         else
             echo " -> java: existing version too old - I will stop here"
             echo "    you can upgrade to java-$req_java_v-openjdk or you can install java-17-openjdk as an alternative (see 'update-alternatives')"
@@ -189,9 +192,7 @@ else
    hasjava=true
 fi
 
-echo 1 $JAVA_HOME
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64
-echo 2 $JAVA_HOME
 
    ###########################################################################
    # starting installation routine
@@ -219,9 +220,9 @@ echo 2 $JAVA_HOME
    ###########################################################################
    # getting signal-cli 
    ###########################################################################
-   echo " -> downloading new client"
+   echo " -> downloading new signal-cli"
    wget -q -P $dest $signalfile
-   cat "$dest/$signalfilename" | tar -xzf - -i
+   cat "$dest/$signalfilename" | tar -xzf - -i > /dev/null
 
 
    ###########################################################################
@@ -260,26 +261,24 @@ echo 2 $JAVA_HOME
       wget -q -P $dest "https://github.com/xerial/sqlite-jdbc/archive/refs/tags/$versionsql.tar.gz"
       cat "$dest/$versionsql.tar.gz" | tar -xzf - -i
 
-      echo " -> compiling sources (needs about 2 minutes on a Raspi4)"
+      echo " -> compiling sources (requires about 2 minutes on a Raspi4)"
       make -C $dest/sqlite-jdbc-$versionsql clean  > /dev/null 2> /dev/null
       make -C $dest/sqlite-jdbc-$versionsql native > /dev/null 2> /dev/null
 
       echo " -> patching 'sqlite-jdbc-$versionsql.jar' with compiled sqlite-jdbc library"
 
-      zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so #> /dev/null
+      zip -d $dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar org/sqlite/native/Linux/aarch64/libsqlitejdbc.so > /dev/null
       archivepath=org/sqlite/native/Linux/aarch64/libsqlitejdbc.so
       librarypath=$dest/sqlite-jdbc-$versionsql/target/sqlite-$versionsql_s-Linux-aarch64/libsqlitejdbc.so
       zipadd "$dest/signal-cli-$versionsig/lib/sqlite-jdbc-$versionsql.jar" "$librarypath" "$archivepath"
-fi
+   fi
 
 
    ###########################################################################
    # be sure to use the required java version
    ###########################################################################
    if [ "$has_java_alt" = true ]; then
-      echo 1 $java_alt
       java_alt=${java_alt:0:-9}
-      echo 2 $java_alt
 
       newLineOne="export JAVA_HOME=\"$java_alt\""
       newLineTwo="PATH=${JAVA_HOME}:$PATH"
